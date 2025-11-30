@@ -1,0 +1,22 @@
+Explored existing codebase (Dtype.h, Types.h, DtypeTraits.h)
+Created implementation plan
+Modified Dtype.h to add Float4_e2m1 and Float4_e2m1_2x enums
+Modified Types.h to define float4_e2m1_t struct with conversion logic
+Modified Types.h to define float4_e2m1_2x_t struct for packed storage
+Modified DtypeTraits.h to register traits for new types
+Modified DtypeTraits.h to add type promotion rules (promote to Float32)
+Modified DtypeCastUtils.h to handle promotion logic
+Created Tests/fp4_tests/test_fp4.cpp
+Fixed compilation error in Types.h (missing closing brace)
+Fixed duplicate case label in DtypeTraits.h
+Fixed unpacking test failure by adding explicit casts in Types.h
+Verified all tests passed
+Refactored FP4 logic from Types.h to include/dtype/fp4.h
+Fixed compilation errors during refactoring (namespace issues, stray braces)
+Verified all tests passed after refactoring
+Created Tests/fp4_tests/test_fp4_completeness.cpp to verify all 16 FP4 values
+Verified all 16 values match IEEE 754 E2M1 standard
+Created Tests/fp4_tests/test_fp4_to_fp32.cpp for exhaustive FP4->FP32 conversion testing
+Created Tests/fp4_tests/test_fp32_to_fp4.cpp for FP32->FP4 conversion testing (exact, rounding, overflow)
+Verified all conversion tests passed
+Created 5 new test files for tensor operations (Basic Ops, Casting, Broadcasting, Mixed Precision, Comparisons) in Tests/fp4_tests/
