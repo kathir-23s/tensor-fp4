@@ -24,67 +24,63 @@
 
 namespace detail_fp4 {
 
-// Helper to convert float to fp4 (E2M1)
-// Format: S(1) E(2) M(1)
-// Bias: 1
+// Helper to convert float to fp4 (E2M1 - Modified)
+// Values: 0, 0.5, 1, 1.5, 2, 3, 4, 6
+// Sign bit + 3 bits magnitude
 __device__ __host__ inline uint8_t float_to_fp4_e2m1(float f) {
     uint32_t u;
     std::memcpy(&u, &f, sizeof(u));
     uint32_t sign = (u >> 31) & 0x1;
-    uint32_t exp = (u >> 23) & 0xFF;
-    uint32_t mant = u & 0x7FFFFFu;
 
-    // Handle NaN
-    if (exp == 0xFF && mant != 0) {
-        return (sign << 3) | 0x7; // NaN: 111
-    }
-    // Handle Inf
-    if (exp == 0xFF && mant == 0) {
-        return (sign << 3) | 0x6; // Inf: 110
-    }
-    // Handle Zero
-    if (exp == 0 && mant == 0) {
-        return (sign << 3) | 0x0;
-    }
-
-    // Max normal: 1.1 * 2^(2-1) = 1.5 * 2 = 3.
-    // Max representable: 3.
     float abs_f = std::abs(f);
 
-    if (abs_f >= 4.0f) { // Overflow threshold (approx)
-        return (sign << 3) | 0x6; // Inf
+    // Clamping: if > 6, clamp to 6 (max value)
+    // Also handles Inf/NaN by treating them as large values -> max value
+    if (std::isnan(abs_f) || abs_f > 6.0f) {
+        return (sign << 3) | 0x7; // 6
     }
-    
-    // Hardcoded nearest rounding for simplicity and speed
+
+    // Nearest rounding to: 0, 0.5, 1, 1.5, 2, 3, 4, 6
+    // Midpoints:
+    // 0   <-> 0.5 : 0.25
+    // 0.5 <-> 1   : 0.75
+    // 1   <-> 1.5 : 1.25
+    // 1.5 <-> 2   : 1.75
+    // 2   <-> 3   : 2.5
+    // 3   <-> 4   : 3.5
+    // 4   <-> 6   : 5.0
+
     uint8_t bits = 0;
-    if (abs_f < 0.25f) bits = 0; // 0
+    if (abs_f < 0.25f) bits = 0;      // 0
     else if (abs_f < 0.75f) bits = 1; // 0.5
-    else if (abs_f < 1.25f) bits = 2; // 1.0
+    else if (abs_f < 1.25f) bits = 2; // 1
     else if (abs_f < 1.75f) bits = 3; // 1.5
-    else if (abs_f < 2.5f) bits = 4; // 2.0
-    else bits = 5; // 3.0
+    else if (abs_f < 2.25f) bits = 4; // 2 (Note: 2.25 is midpoint between 2 and 2.5? No, next is 3. Midpoint 2.5)
+                                      // Wait, 2->3 midpoint is 2.5.
+                                      // Let's recheck thresholds.
+                                      // 0, 0.5, 1, 1.5, 2, 3, 4, 6
+    else if (abs_f < 2.5f) bits = 4;  // 2
+    else if (abs_f < 3.5f) bits = 5;  // 3
+    else if (abs_f < 5.0f) bits = 6;  // 4
+    else bits = 7;                    // 6
 
     return (sign << 3) | bits;
 }
 
 __device__ __host__ inline float fp4_e2m1_to_float(uint8_t val) {
     uint8_t sign = (val >> 3) & 0x1;
-    uint8_t exp = (val >> 1) & 0x3;
-    uint8_t mant = val & 0x1;
+    uint8_t mag = val & 0x7;
 
     float res = 0.0f;
-    if (exp == 0) {
-        if (mant == 0) res = 0.0f;
-        else res = 0.5f; // Subnormal: 0.1 * 2^0
-    } else if (exp == 1) {
-        // 1.M * 2^0
-        res = (1.0f + mant * 0.5f); 
-    } else if (exp == 2) {
-        // 1.M * 2^1
-        res = (1.0f + mant * 0.5f) * 2.0f;
-    } else { // exp == 3
-        if (mant == 0) return sign ? -std::numeric_limits<float>::infinity() : std::numeric_limits<float>::infinity();
-        else return std::numeric_limits<float>::quiet_NaN();
+    switch (mag) {
+        case 0: res = 0.0f; break;
+        case 1: res = 0.5f; break;
+        case 2: res = 1.0f; break;
+        case 3: res = 1.5f; break;
+        case 4: res = 2.0f; break;
+        case 5: res = 3.0f; break;
+        case 6: res = 4.0f; break;
+        case 7: res = 6.0f; break;
     }
 
     return sign ? -res : res;
@@ -155,6 +151,11 @@ struct float4_e2m1_2x_t {
 
     __device__ __host__ float4_e2m1_2x_t() : raw_bits(0) {}
     __device__ __host__ explicit float4_e2m1_2x_t(uint8_t bits) : raw_bits(bits) {}
+
+    __device__ __host__ explicit float4_e2m1_2x_t(float val) {
+        float4_e2m1_t v(val);
+        raw_bits = (v.raw_bits & 0xF) | ((v.raw_bits & 0xF) << 4);
+    }
     
     // Construct from two fp4 values
     __device__ __host__ float4_e2m1_2x_t(float4_e2m1_t v0, float4_e2m1_t v1) {
