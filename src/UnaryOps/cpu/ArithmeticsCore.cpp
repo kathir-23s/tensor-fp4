@@ -1,6 +1,7 @@
 #include <cmath>
 #include "core/Tensor.h"
 #include "dtype/Types.h"
+#include "dtype/fp4.h"
 #include "dtype/DtypeTraits.h"
 #include "core/TensorDispatch.h"
 #include "ops/helpers/arith.hpp"
@@ -216,6 +217,8 @@ Tensor power_out_cpu_wrap(const Tensor& input_tensor, int exponent) {
                     return OutputType(result.real(), result.imag());
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
                     return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
+                    return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
                 } else {
                     return std::pow(val, exponent);
                 }
@@ -264,6 +267,8 @@ Tensor power_out_cpu_wrap(const Tensor& input_tensor, float exponent) {
                     return OutputType(result.real(), result.imag());
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
                     return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
+                    return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
                 } else {
                     return std::pow(val, static_cast<OutputType>(exponent));
                 }
@@ -311,6 +316,8 @@ Tensor power_out_cpu_wrap(const Tensor& input_tensor, double exponent) {
                     auto result = std::pow(c_val, static_cast<std::complex<double>>(exponent));
                     return OutputType(result.real(), result.imag());
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
+                    return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
                     return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
                 } else {
                     return std::pow(val, static_cast<OutputType>(exponent));
@@ -427,6 +434,8 @@ Tensor square_root_out_cpu_wrap(const Tensor& input_tensor) {
                     auto result = std::sqrt(c_val);
                     return OutputType(result.real(), result.imag());
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
+                    return static_cast<OutputType>(std::sqrt(static_cast<float>(val)));
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
                     return static_cast<OutputType>(std::sqrt(static_cast<float>(val)));
                 } else {
                     return std::sqrt(val);
@@ -641,6 +650,8 @@ Tensor absolute_out_cpu_wrap(const Tensor& input_tensor) {
                     // Use unqualified abs() for custom complex types
                     return OutputType(abs(val));
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
+                    return static_cast<OutputType>(std::abs(static_cast<float>(val)));
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
                     return static_cast<OutputType>(std::abs(static_cast<float>(val)));
                 } else {
                     return std::abs(val);

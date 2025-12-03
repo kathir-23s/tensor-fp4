@@ -3,7 +3,7 @@
 #ifndef TENSOR_DISPATCH_H
 #define TENSOR_DISPATCH_H
 
-// ✅ CRITICAL: Include Dtype.h first for enum definition
+//  CRITICAL: Include Dtype.h first for enum definition
 #include "dtype/Dtype.h"
 #include <stdexcept>
 #include <cstdint>
@@ -14,16 +14,16 @@
 #endif
 #include "dtype/Types.h"
 
-// ✅ Forward declare the Tensor class (avoid circular dependency)
+//  Forward declare the Tensor class (avoid circular dependency)
 namespace OwnTensor {
     class Tensor;
 }
 
-// ✅ CRITICAL FIX: Manually specify the type mapping WITHOUT dtype_traits
+//  CRITICAL FIX: Manually specify the type mapping WITHOUT dtype_traits
 // This avoids the circular dependency and NVCC template resolution issues
 namespace OwnTensor {
 
-// ✅ Simple type resolver that works in both CPU and CUDA contexts
+//  Simple type resolver that works in both CPU and CUDA contexts
 template<Dtype dt> struct DtypeToType;
 
 // Integer types
@@ -43,7 +43,7 @@ template<> struct DtypeToType<Dtype::Float64> { using type = double; };
 //Boolean type
 template<> struct DtypeToType<Dtype::Bool> { using type = bool;};
 
-// ✅ Half precision types - resolve based on compilation context
+// Half precision types - resolve based on compilation context
 #ifdef __CUDACC__
     template<> struct DtypeToType<Dtype::Float16>  { using type = __half; };
     template<> struct DtypeToType<Dtype::Bfloat16> { using type = __nv_bfloat16; };
@@ -63,7 +63,7 @@ template<> struct DtypeToType<Dtype::Bool> { using type = bool;};
     template<> struct DtypeToType<Dtype::Float4_e2m1_2x> { using type = float4_e2m1_2x_t; };
 #endif
 
-// ✅ Runtime dispatcher using the simple type resolver
+//  Runtime dispatcher using the simple type resolver
 template<typename Func>
 static auto dispatch_by_dtype(Dtype dtype, Func&& f) {
     switch(dtype) {

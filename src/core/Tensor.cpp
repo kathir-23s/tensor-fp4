@@ -1,5 +1,6 @@
 #include "core/Tensor.h"
 #include "dtype/Types.h"
+#include "dtype/fp4.h"
 #include "device/AllocatorRegistry.h"
 #include "device/DeviceTransfer.h"
 #include "device/Device.h"
@@ -510,6 +511,8 @@ namespace OwnTensor
             case Dtype::Complex32: return dtype_traits<Dtype::Complex32>::size;
             case Dtype::Complex64: return dtype_traits<Dtype::Complex64>::size;
             case Dtype::Complex128: return dtype_traits<Dtype::Complex128>::size;
+            case Dtype::Float4_e2m1: return dtype_traits<Dtype::Float4_e2m1>::size;
+            case Dtype::Float4_e2m1_2x: return dtype_traits<Dtype::Float4_e2m1_2x>::size;
             default: throw std::runtime_error("Unsupported data type");
         }
     }
@@ -586,10 +589,10 @@ Tensor Tensor::to_bool() const {
             // Launch conversion kernel
             convert_to_bool_cuda<T>(src, dst, this->numel(), stream);
             
-            // ✅ Synchronization is ALREADY in convert_to_bool_cuda
+            //  Synchronization is ALREADY in convert_to_bool_cuda
             // No need to sync again here (but it doesn't hurt)
         });
-    }  // ✅ ADD THIS CLOSING BRACE
+    }  //  ADD THIS CLOSING BRACE
 #endif
     else {
         throw std::runtime_error("to_bool: Unknown device type");
@@ -632,18 +635,25 @@ Tensor Tensor::to_bool() const {
 
     template const bfloat16_t* Tensor::data<bfloat16_t>() const;
     template bfloat16_t* Tensor::data<bfloat16_t>();
-// unsigned types 
-template const uint8_t* Tensor::data<uint8_t>() const;
-template uint8_t* Tensor::data<uint8_t>();
 
-template const uint16_t* Tensor::data<uint16_t>() const;
-template uint16_t* Tensor::data<uint16_t>();
+    template const float4_e2m1_t* Tensor::data<float4_e2m1_t>() const;
+    template float4_e2m1_t* Tensor::data<float4_e2m1_t>();
 
-template const uint32_t* Tensor::data<uint32_t>() const;
-template uint32_t* Tensor::data<uint32_t>();
+    template const float4_e2m1_2x_t* Tensor::data<float4_e2m1_2x_t>() const;
+    template float4_e2m1_2x_t* Tensor::data<float4_e2m1_2x_t>();
+ 
+    // unsigned types 
+    template const uint8_t* Tensor::data<uint8_t>() const;
+    template uint8_t* Tensor::data<uint8_t>();
 
-template const uint64_t* Tensor::data<uint64_t>() const;
-template uint64_t* Tensor::data<uint64_t>();
+    template const uint16_t* Tensor::data<uint16_t>() const;
+    template uint16_t* Tensor::data<uint16_t>();
+
+    template const uint32_t* Tensor::data<uint32_t>() const;
+    template uint32_t* Tensor::data<uint32_t>();
+
+    template const uint64_t* Tensor::data<uint64_t>() const;
+    template uint64_t* Tensor::data<uint64_t>();
     // Complex types
     template const complex32_t* Tensor::data<complex32_t>() const;
     template complex32_t* Tensor::data<complex32_t>();
@@ -671,6 +681,9 @@ template uint64_t* Tensor::data<uint64_t>();
     template void Tensor::set_data<complex32_t>(const std::vector<complex32_t>&);
     template void Tensor::set_data<complex64_t>(const std::vector<complex64_t>&);
     template void Tensor::set_data<complex128_t>(const std::vector<complex128_t>&);
+    template void Tensor::set_data<float4_e2m1_t>(const std::vector<float4_e2m1_t>&);
+    template void Tensor::set_data<float4_e2m1_2x_t>(const std::vector<float4_e2m1_2x_t>&);
+    
 
     // Explicit instantiations for fill
     template void Tensor::fill<bool>(bool);
@@ -688,5 +701,7 @@ template uint64_t* Tensor::data<uint64_t>();
     template void Tensor::fill<complex32_t>(complex32_t);
     template void Tensor::fill<complex64_t>(complex64_t);
     template void Tensor::fill<complex128_t>(complex128_t);
+    template void Tensor::fill<float4_e2m1_t>(float4_e2m1_t);
+    template void Tensor::fill<float4_e2m1_2x_t>(float4_e2m1_2x_t);
 
 }

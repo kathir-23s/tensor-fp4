@@ -92,7 +92,7 @@ inline void ckerr(const char* where) {
     if (e != cudaSuccess) throw std::runtime_error(std::string(where) + ": " + cudaGetErrorString(e));
 }
 
-// ✅ Helper to determine promoted dtype for division (HOST function)
+//  Helper to determine promoted dtype for division (HOST function)
 inline Dtype get_division_output_dtype(Dtype input_dtype) {
     if (input_dtype == Dtype::Bool) return Dtype::Float32;
     if (input_dtype == Dtype::Int16 || input_dtype == Dtype::Int32 || input_dtype == Dtype::Int64) {
@@ -149,7 +149,7 @@ __global__ void k_div_copy(const T* a, T* o, float s, size_t n, int fmt) {
         stf<T>(o, i, ldf<T>(a, i, fmt) / s, fmt);
 }
 
-// ✅ NEW: Cross-type division kernel (SrcT → DstT)
+//  NEW: Cross-type division kernel (SrcT → DstT)
 template<typename SrcT, typename DstT>
 __global__ void k_div_copy_cross(const SrcT* a, DstT* o, float s, size_t n, int src_fmt, int dst_fmt) {
     for (size_t i = blockIdx.x*blockDim.x + threadIdx.x; i < n; i += blockDim.x*gridDim.x) {
@@ -174,7 +174,7 @@ __global__ void k_div_copy_scalar_tensor(const T* a, T* o, float s, size_t n, in
     }
 }
 
-// ✅ NEW: Cross-type scalar/tensor division
+//  NEW: Cross-type scalar/tensor division
 template<typename SrcT, typename DstT>
 __global__ void k_div_copy_scalar_tensor_cross(const SrcT* a, DstT* o, float s, size_t n, 
                                                  int src_fmt, int dst_fmt, int* flag) {
@@ -315,7 +315,7 @@ void cuda_mul_inplace(Tensor& t, double s, cudaStream_t stream) {
     dispatch_by_dtype(t.dtype(), [&](auto d){ using T = decltype(d); launch_inplace<T>(t, s, k_mul_inplace<T>, stream); });
 }
 
-// ✅ FIXED: Check promotion before in-place division
+//  FIXED: Check promotion before in-place division
 void cuda_div_inplace(Tensor& t, double s, cudaStream_t stream) {
     Dtype dt = t.dtype();
     Dtype promoted_dt = get_division_output_dtype(dt);
@@ -349,7 +349,7 @@ Tensor cuda_mul_copy(const Tensor& a, double s, cudaStream_t stream) {
     return out;
 }
 
-// ✅ FIXED: Division promotes to Float32 for integers/bool
+//  FIXED: Division promotes to Float32 for integers/bool
 Tensor cuda_div_copy(const Tensor& a, double s, cudaStream_t stream) {
     const Dtype input_dt = a.dtype();
     const Dtype output_dt = get_division_output_dtype(input_dt);
@@ -390,7 +390,7 @@ Tensor cuda_sub_copy_scalar_tensor(double s, const Tensor& a, cudaStream_t strea
     return out;
 }
 
-// ✅ FIXED: Scalar / Tensor also promotes
+//  FIXED: Scalar / Tensor also promotes
 Tensor cuda_div_copy_scalar_tensor(double s, const Tensor& a, cudaStream_t stream) {
     const Dtype input_dt = a.dtype();
     const Dtype output_dt = get_division_output_dtype(input_dt);

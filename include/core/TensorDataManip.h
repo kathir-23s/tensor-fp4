@@ -49,7 +49,7 @@ namespace OwnTensor {
     template <typename T>
     inline void Tensor::fill(T value)
     {
-        // ✅ STRICT TYPE CHECKING: Match behavior of set_data()
+        //  STRICT TYPE CHECKING: Match behavior of set_data()
         // Throw error if input type doesn't match tensor's dtype
         if (!is_same_type<T>(dtype_)) {
             throw std::runtime_error("Fill: Datatype mismatch - input type must match tensor dtype");

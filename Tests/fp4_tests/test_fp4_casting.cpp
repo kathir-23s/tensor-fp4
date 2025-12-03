@@ -1,7 +1,7 @@
 #include <iostream>
 #include <vector>
 #include "core/Tensor.h"
-#include "dtype/Types.h"
+#include "dtype/fp4.h"
 
 using namespace OwnTensor;
 
@@ -9,8 +9,9 @@ int main() {
     std::cout << "Running FP4 Casting Test..." << std::endl;
 
     // 1. FP32 -> FP4
-    Tensor t_fp32(Shape{{4}}, Dtype::Float32);
-    t_fp32.set_data<float>({0.5f, 1.0f, 3.0f, 4.0f}); // 4.0 -> Inf
+    Tensor t_fp32(Shape{{4}}, Dtype::Float32, DeviceIndex(Device::CPU));
+    std::vector<float> data = {0.5f, 1.0f, 3.0f, 4.0f}; // 4.0 -> Inf
+    t_fp32.set_data(data);
     
     Tensor t_fp4 = t_fp32.as_type(Dtype::Float4_e2m1);
     
@@ -24,6 +25,7 @@ int main() {
     bool pass1 = true;
     for(int i=0; i<4; ++i) {
         if (static_cast<float>(data_fp4[i]) != static_cast<float>(expected_fp4[i])) pass1 = false;
+        std::cout << "\n" << static_cast<float>(data_fp4[i]) << "\t" << static_cast<float>(expected_fp4[i]) << "\n";
     }
     std::cout << "FP32 -> FP4: " << (pass1 ? "PASS" : "FAIL") << std::endl;
 

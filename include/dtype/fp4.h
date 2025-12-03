@@ -22,7 +22,7 @@
     #endif
 #endif
 
-namespace detail {
+namespace detail_fp4 {
 
 // Helper to convert float to fp4 (E2M1)
 // Format: S(1) E(2) M(1)
@@ -90,7 +90,7 @@ __device__ __host__ inline float fp4_e2m1_to_float(uint8_t val) {
     return sign ? -res : res;
 }
 
-} // namespace detail
+} // namespace detail_fp4
 
 /**
  * @brief FP4 (E2M1)
@@ -101,7 +101,7 @@ struct float4_e2m1_t {
     uint8_t raw_bits; // Only lower 4 bits used
 
     __device__ __host__ float4_e2m1_t() : raw_bits(0) {}
-    __device__ __host__ explicit float4_e2m1_t(float val) { raw_bits = detail::float_to_fp4_e2m1(val); }
+    __device__ __host__ explicit float4_e2m1_t(float val) { raw_bits = detail_fp4::float_to_fp4_e2m1(val); }
     __device__ __host__ explicit float4_e2m1_t(uint8_t bits) : raw_bits(bits & 0xF) {} // Direct construction
     __device__ __host__ float4_e2m1_t(const float4_e2m1_t& other) : raw_bits(other.raw_bits) {}
 
@@ -109,14 +109,14 @@ struct float4_e2m1_t {
         ::std::is_arithmetic_v<U> && !::std::is_same_v<std::decay_t<U>, float>
     >>
     __device__ __host__ explicit float4_e2m1_t(U val) {
-        raw_bits = detail::float_to_fp4_e2m1(static_cast<float>(val));
+        raw_bits = detail_fp4::float_to_fp4_e2m1(static_cast<float>(val));
     }
 
-    __device__ __host__ operator float() const { return detail::fp4_e2m1_to_float(raw_bits); }
+    __device__ __host__ operator float() const { return detail_fp4::fp4_e2m1_to_float(raw_bits); }
 
     // Assignment
     __device__ __host__ float4_e2m1_t& operator=(float val) {
-        raw_bits = detail::float_to_fp4_e2m1(val);
+        raw_bits = detail_fp4::float_to_fp4_e2m1(val);
         return *this;
     }
     __device__ __host__ float4_e2m1_t& operator=(const float4_e2m1_t& other) {
@@ -133,6 +133,17 @@ struct float4_e2m1_t {
     __device__ __host__ float4_e2m1_t operator-(const float4_e2m1_t& other) const { return float4_e2m1_t(static_cast<float>(*this) - static_cast<float>(other)); }
     __device__ __host__ float4_e2m1_t operator*(const float4_e2m1_t& other) const { return float4_e2m1_t(static_cast<float>(*this) * static_cast<float>(other)); }
     __device__ __host__ float4_e2m1_t operator/(const float4_e2m1_t& other) const { return float4_e2m1_t(static_cast<float>(*this) / static_cast<float>(other)); }
+
+    // Compound Assignment
+    __device__ __host__ float4_e2m1_t& operator+=(const float4_e2m1_t& other) { *this = *this + other; return *this; }
+    __device__ __host__ float4_e2m1_t& operator-=(const float4_e2m1_t& other) { *this = *this - other; return *this; }
+    __device__ __host__ float4_e2m1_t& operator*=(const float4_e2m1_t& other) { *this = *this * other; return *this; }
+    __device__ __host__ float4_e2m1_t& operator/=(const float4_e2m1_t& other) { *this = *this / other; return *this; }
+
+    // Unary operators
+    __device__ __host__ float4_e2m1_t operator-() const {
+        return float4_e2m1_t(-(float)*this);
+    }
 };
 
 /**
@@ -156,4 +167,59 @@ struct float4_e2m1_2x_t {
     
     __device__ __host__ void set_low(float4_e2m1_t v) { raw_bits = (raw_bits & 0xF0) | (v.raw_bits & 0xF); }
     __device__ __host__ void set_high(float4_e2m1_t v) { raw_bits = (raw_bits & 0x0F) | ((v.raw_bits & 0xF) << 4); }
+
+    // Assignment
+    __device__ __host__ float4_e2m1_2x_t& operator=(float val) {
+        float4_e2m1_t v(val);
+        set_low(v);
+        set_high(v);
+        return *this;
+    }
+
+    // Conversion
+    __device__ __host__ operator float() const { return (float)get_low(); }
+    __device__ __host__ operator double() const { return (double)get_low(); }
+    __device__ __host__ explicit operator float4_e2m1_t() const { return get_low(); }
+    __device__ __host__ explicit operator bool() const { return raw_bits != 0; }
+    __device__ __host__ explicit operator uint8_t() const { return raw_bits; }
+    __device__ __host__ explicit operator int8_t() const { return (int8_t)raw_bits; }
+    __device__ __host__ explicit operator uint16_t() const { return (uint16_t)raw_bits; }
+    __device__ __host__ explicit operator int16_t() const { return (int16_t)raw_bits; }
+    __device__ __host__ explicit operator uint32_t() const { return (uint32_t)raw_bits; }
+    __device__ __host__ explicit operator int32_t() const { return (int32_t)raw_bits; }
+    __device__ __host__ explicit operator uint64_t() const { return (uint64_t)raw_bits; }
+    __device__ __host__ explicit operator int64_t() const { return (int64_t)raw_bits; }
+
+    // Unary operators
+    __device__ __host__ float4_e2m1_2x_t operator-() const {
+        return float4_e2m1_2x_t(-(float)*this);
+    }
+
+    // Comparison
+    __device__ __host__ bool operator==(const float4_e2m1_2x_t& other) const { return raw_bits == other.raw_bits; }
+    __device__ __host__ bool operator!=(const float4_e2m1_2x_t& other) const { return raw_bits != other.raw_bits; }
+    __device__ __host__ bool operator<(const float4_e2m1_2x_t& other) const { return raw_bits < other.raw_bits; }
+    __device__ __host__ bool operator>(const float4_e2m1_2x_t& other) const { return raw_bits > other.raw_bits; }
+    __device__ __host__ bool operator<=(const float4_e2m1_2x_t& other) const { return raw_bits <= other.raw_bits; }
+    __device__ __host__ bool operator>=(const float4_e2m1_2x_t& other) const { return raw_bits >= other.raw_bits; }
+
+    // Arithmetic
+    __device__ __host__ float4_e2m1_2x_t operator+(const float4_e2m1_2x_t& other) const {
+        return float4_e2m1_2x_t(get_low() + other.get_low(), get_high() + other.get_high());
+    }
+    __device__ __host__ float4_e2m1_2x_t operator-(const float4_e2m1_2x_t& other) const {
+        return float4_e2m1_2x_t(get_low() - other.get_low(), get_high() - other.get_high());
+    }
+    __device__ __host__ float4_e2m1_2x_t operator*(const float4_e2m1_2x_t& other) const {
+        return float4_e2m1_2x_t(get_low() * other.get_low(), get_high() * other.get_high());
+    }
+    __device__ __host__ float4_e2m1_2x_t operator/(const float4_e2m1_2x_t& other) const {
+        return float4_e2m1_2x_t(get_low() / other.get_low(), get_high() / other.get_high());
+    }
+
+    // Compound Assignment
+    __device__ __host__ float4_e2m1_2x_t& operator+=(const float4_e2m1_2x_t& other) { *this = *this + other; return *this; }
+    __device__ __host__ float4_e2m1_2x_t& operator-=(const float4_e2m1_2x_t& other) { *this = *this - other; return *this; }
+    __device__ __host__ float4_e2m1_2x_t& operator*=(const float4_e2m1_2x_t& other) { *this = *this * other; return *this; }
+    __device__ __host__ float4_e2m1_2x_t& operator/=(const float4_e2m1_2x_t& other) { *this = *this / other; return *this; }
 }; // Closing brace for float4_e2m1_2x_t
