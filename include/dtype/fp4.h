@@ -27,42 +27,40 @@ namespace detail {
 // Helper to convert float to fp4 (E2M1)
 // Format: S(1) E(2) M(1)
 // Bias: 1
+// Helper to convert float to fp4 (E2M1)
+// Format: S(1) E(2) M(1)
+// Bias: 1
+// New Mapping (No Inf/NaN):
+// 000: 0
+// 001: 0.5 (Subnormal)
+// 010: 1.0 (Norm, E=1, M=0)
+// 011: 1.5 (Norm, E=1, M=1)
+// 100: 2.0 (Norm, E=2, M=0)
+// 101: 3.0 (Norm, E=2, M=1)
+// 110: 4.0 (Norm, E=3, M=0) - Previously Inf
+// 111: 6.0 (Norm, E=3, M=1) - Previously NaN
 __device__ __host__ inline uint8_t float_to_fp4_e2m1(float f) {
     uint32_t u;
     std::memcpy(&u, &f, sizeof(u));
     uint32_t sign = (u >> 31) & 0x1;
-    uint32_t exp = (u >> 23) & 0xFF;
-    uint32_t mant = u & 0x7FFFFFu;
-
-    // Handle NaN
-    if (exp == 0xFF && mant != 0) {
-        return (sign << 3) | 0x7; // NaN: 111
-    }
-    // Handle Inf
-    if (exp == 0xFF && mant == 0) {
-        return (sign << 3) | 0x6; // Inf: 110
-    }
-    // Handle Zero
-    if (exp == 0 && mant == 0) {
-        return (sign << 3) | 0x0;
+    
+    // Handle NaN -> 0 (Safe default)
+    if (std::isnan(f)) {
+        return (sign << 3) | 0x0; 
     }
 
-    // Max normal: 1.1 * 2^(2-1) = 1.5 * 2 = 3.
-    // Max representable: 3.
     float abs_f = std::abs(f);
 
-    if (abs_f >= 4.0f) { // Overflow threshold (approx)
-        return (sign << 3) | 0x6; // Inf
-    }
-    
-    // Hardcoded nearest rounding for simplicity and speed
+    // Hardcoded nearest rounding
     uint8_t bits = 0;
-    if (abs_f < 0.25f) bits = 0; // 0
-    else if (abs_f < 0.75f) bits = 1; // 0.5
-    else if (abs_f < 1.25f) bits = 2; // 1.0
-    else if (abs_f < 1.75f) bits = 3; // 1.5
-    else if (abs_f < 2.5f) bits = 4; // 2.0
-    else bits = 5; // 3.0
+    if (abs_f < 0.25f) bits = 0;       // 0
+    else if (abs_f < 0.75f) bits = 1;  // 0.5
+    else if (abs_f < 1.25f) bits = 2;  // 1.0
+    else if (abs_f < 1.75f) bits = 3;  // 1.5
+    else if (abs_f < 2.5f) bits = 4;   // 2.0
+    else if (abs_f < 3.5f) bits = 5;   // 3.0
+    else if (abs_f < 5.0f) bits = 6;   // 4.0
+    else bits = 7;                     // 6.0 (Saturate max)
 
     return (sign << 3) | bits;
 }
@@ -83,8 +81,8 @@ __device__ __host__ inline float fp4_e2m1_to_float(uint8_t val) {
         // 1.M * 2^1
         res = (1.0f + mant * 0.5f) * 2.0f;
     } else { // exp == 3
-        if (mant == 0) return sign ? -std::numeric_limits<float>::infinity() : std::numeric_limits<float>::infinity();
-        else return std::numeric_limits<float>::quiet_NaN();
+        // 1.M * 2^2 -> 4.0 or 6.0
+        res = (1.0f + mant * 0.5f) * 4.0f;
     }
 
     return sign ? -res : res;

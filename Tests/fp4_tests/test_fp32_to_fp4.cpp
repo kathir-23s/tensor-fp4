@@ -51,19 +51,23 @@ int main() {
         {2.5f, 0b0101, "2.5 -> 3.0 (Round up)"},
 
         // 3. Out of Range (Overflow)
-        // Max representable is 3.0.
-        // Threshold for Inf in code is >= 4.0f.
-        {3.1f, 0b0101, "3.1 -> 3.0 (Saturate to Max)"},
-        {3.9f, 0b0101, "3.9 -> 3.0 (Saturate to Max)"},
-        {4.0f, 0b0110, "4.0 -> Inf (Overflow threshold)"},
-        {100.0f, 0b0110, "100.0 -> Inf"},
-        {-4.0f, 0b1110, "-4.0 -> -Inf"},
-        {-100.0f, 0b1110, "-100.0 -> -Inf"},
+        // Max representable is now 6.0.
+        {3.1f, 0b0101, "3.1 -> 3.0"},
+        {3.49f, 0b0101, "3.49 -> 3.0"},
+        {3.5f, 0b0110, "3.5 -> 4.0 (Round up)"},
+        {4.0f, 0b0110, "4.0 -> 4.0 (Exact)"},
+        {4.9f, 0b0110, "4.9 -> 4.0"},
+        {5.0f, 0b0111, "5.0 -> 6.0 (Round up)"},
+        {6.0f, 0b0111, "6.0 -> 6.0 (Exact)"},
+        {100.0f, 0b0111, "100.0 -> 6.0 (Saturate)"},
+        {-4.0f, 0b1110, "-4.0 -> -4.0"},
+        {-6.0f, 0b1111, "-6.0 -> -6.0"},
+        {-100.0f, 0b1111, "-100.0 -> -6.0 (Saturate)"},
 
         // 4. Special Values
-        {std::numeric_limits<float>::infinity(), 0b0110, "Inf -> Inf"},
-        {-std::numeric_limits<float>::infinity(), 0b1110, "-Inf -> -Inf"},
-        {std::numeric_limits<float>::quiet_NaN(), 0b0111, "NaN -> NaN"}
+        {std::numeric_limits<float>::infinity(), 0b0111, "Inf -> 6.0 (Saturate)"},
+        {-std::numeric_limits<float>::infinity(), 0b1111, "-Inf -> -6.0 (Saturate)"},
+        {std::numeric_limits<float>::quiet_NaN(), 0b0000, "NaN -> 0.0 (Safe default)"}
     };
 
     int passed = 0;
@@ -78,13 +82,8 @@ int main() {
         OwnTensor::float4_e2m1_t val(tc.input);
         uint8_t bits = val.raw_bits;
 
-        // For NaN, exact bit match might vary, but we expect 0111 (7) or 1111 (15)
-        bool ok = false;
-        if (std::isnan(tc.input)) {
-            ok = (bits == 0b0111 || bits == 0b1111);
-        } else {
-            ok = (bits == tc.expected_bits);
-        }
+        // For NaN, we now expect 0 (0000)
+        bool ok = (bits == tc.expected_bits);
 
         std::cout << "Input: " << std::setw(10) << tc.input 
                   << " | Expected: " << std::bitset<4>(tc.expected_bits)
