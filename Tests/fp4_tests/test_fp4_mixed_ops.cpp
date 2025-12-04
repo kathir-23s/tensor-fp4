@@ -14,7 +14,7 @@ int main() {
     A.set_data<float4_e2m1_t>({float4_e2m1_t(1.0f), float4_e2m1_t(2.0f)});
 
     // B (FP32): [0.5, 0.1]
-    Tensor B(Shape{{2}}, Dtype::Float32);
+    Tensor B(Shape{{2}}, Dtype::Float32, DeviceIndex(Device::CPU));
     B.set_data<float>({0.5f, 0.1f});
 
     // C = A + B

@@ -10,7 +10,7 @@
 #include <string>
 #include "core/Tensor.h"
 #include <cassert>
-// ✅ ALWAYS use custom structs (both CPU and GPU compilation)
+//  ALWAYS use custom structs (both CPU and GPU compilation)
 #include "dtype/Types.h"
 
 // ═══════════════════════════════════════════════════════════
@@ -433,9 +433,9 @@ if (a == Dtype::Complex32 || b == Dtype::Complex32) return Dtype::Complex32;
     return Dtype::Bool;
 }
 
-// ✅ NEW: Special promotion for division (always promotes to float)
+//  NEW: Special promotion for division (always promotes to float)
 inline Dtype promote_dtypes_division(Dtype a, Dtype b) {
-    // ✅ CRITICAL: Division always promotes to float to avoid integer division issues
+    //  CRITICAL: Division always promotes to float to avoid integer division issues
     
     // If either is already float, use normal promotion
     if (a == Dtype::Float64 || b == Dtype::Float64) return Dtype::Float64;
@@ -445,7 +445,7 @@ inline Dtype promote_dtypes_division(Dtype a, Dtype b) {
     if (a == Dtype::Float4_e2m1 || b == Dtype::Float4_e2m1) return Dtype::Float4_e2m1;
     if (a == Dtype::Float4_e2m1_2x || b == Dtype::Float4_e2m1_2x) return Dtype::Float4_e2m1_2x;
     
-    // ✅ Otherwise, promote integers and bool to Float32
+    //  Otherwise, promote integers and bool to Float32
     // This matches PyTorch's behavior: Int16 / Bool → Float32
     return Dtype::Float32;
 }

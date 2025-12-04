@@ -7,6 +7,8 @@
 #include <cuda_bf16.h>
 #include <stdexcept>
 #include "dtype/Types.h"
+#include "dtype/fp4.h"
+
 #include "ops/helpers/ConversionKernels.cuh"
 namespace OwnTensor {
 
@@ -113,6 +115,8 @@ template void convert_to_bool_cuda<uint64_t>(const uint64_t*, bool*, int64_t, cu
 template void convert_to_bool_cuda<complex32_t>(const complex32_t*, bool*, int64_t, cudaStream_t);
 template void convert_to_bool_cuda<complex64_t>(const complex64_t*, bool*, int64_t, cudaStream_t);
 template void convert_to_bool_cuda<complex128_t>(const complex128_t*, bool*, int64_t, cudaStream_t);
+template void convert_to_bool_cuda<float4_e2m1_t>(const float4_e2m1_t*, bool*, int64_t, cudaStream_t);
+template void convert_to_bool_cuda<float4_e2m1_2x_t>(const float4_e2m1_2x_t*, bool*, int64_t, cudaStream_t);
 
 } // namespace OwnTensor
 

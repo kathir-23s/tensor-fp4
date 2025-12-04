@@ -13,42 +13,39 @@ using namespace OwnTensor;
 void test_fp4_conversion() {
     std::cout << "Testing FP4 E2M1 Conversion..." << std::endl;
     
-    // Table of expected values based on E2M1 (Bias 1)
-    // S E E M
-    // 0 00 0 = 0
-    // 0 00 1 = 0.5
-    // 0 01 0 = 1.0
-    // 0 01 1 = 1.5
-    // 0 10 0 = 2.0
-    // 0 10 1 = 3.0
-    // 0 11 0 = Inf
-    // 0 11 1 = NaN
+    // Table of expected values based on Modified FP4
+    // 0000 -> 0
+    // 0001 -> 0.5
+    // 0010 -> 1
+    // 0011 -> 1.5
+    // 0100 -> 2
+    // 0101 -> 3
+    // 0110 -> 4
+    // 0111 -> 6
     
     struct TestCase {
         uint8_t bits;
         float expected;
-        bool is_nan;
-        bool is_inf;
     };
 
     std::vector<TestCase> cases = {
-        {0b0000, 0.0f, false, false},
-        {0b0001, 0.5f, false, false},
-        {0b0010, 1.0f, false, false},
-        {0b0011, 1.5f, false, false},
-        {0b0100, 2.0f, false, false},
-        {0b0101, 3.0f, false, false},
-        {0b0110, 0.0f, false, true}, // Inf
-        {0b0111, 0.0f, true, false}, // NaN
+        {0b0000, 0.0f},
+        {0b0001, 0.5f},
+        {0b0010, 1.0f},
+        {0b0011, 1.5f},
+        {0b0100, 2.0f},
+        {0b0101, 3.0f},
+        {0b0110, 4.0f},
+        {0b0111, 6.0f},
         // Negatives
-        {0b1000, -0.0f, false, false},
-        {0b1001, -0.5f, false, false},
-        {0b1010, -1.0f, false, false},
-        {0b1011, -1.5f, false, false},
-        {0b1100, -2.0f, false, false},
-        {0b1101, -3.0f, false, false},
-        {0b1110, 0.0f, false, true}, // -Inf
-        {0b1111, 0.0f, true, false}  // NaN
+        {0b1000, -0.0f},
+        {0b1001, -0.5f},
+        {0b1010, -1.0f},
+        {0b1011, -1.5f},
+        {0b1100, -2.0f},
+        {0b1101, -3.0f},
+        {0b1110, -4.0f},
+        {0b1111, -6.0f}
     };
 
     for (const auto& tc : cases) {
@@ -57,16 +54,8 @@ void test_fp4_conversion() {
         
         std::cout << "Bits: " << std::bitset<4>(tc.bits) << " -> Float: " << f;
         
-        if (tc.is_nan) {
-            if (std::isnan(f)) std::cout << " [PASS]" << std::endl;
-            else std::cout << " [FAIL] Expected NaN" << std::endl;
-        } else if (tc.is_inf) {
-            if (std::isinf(f)) std::cout << " [PASS]" << std::endl;
-            else std::cout << " [FAIL] Expected Inf" << std::endl;
-        } else {
-            if (std::abs(f - tc.expected) < 1e-5f) std::cout << " [PASS]" << std::endl;
-            else std::cout << " [FAIL] Expected " << tc.expected << std::endl;
-        }
+        if (std::abs(f - tc.expected) < 1e-5f) std::cout << " [PASS]" << std::endl;
+        else std::cout << " [FAIL] Expected " << tc.expected << std::endl;
     }
 }
 
@@ -81,18 +70,21 @@ void test_float_to_fp4() {
     std::vector<TestCase> cases = {
         {0.0f, 0b0000},
         {0.2f, 0b0000}, // Round down to 0
-        {0.3f, 0b0001}, // Round up to 0.5 (midpoint 0.25)
+        {0.3f, 0b0001}, // Round up to 0.5
         {0.5f, 0b0001},
-        {0.75f, 0b0010}, // Round to 1.0 (midpoint 0.75, tie break up?) Logic says <0.75 is 0.5. >=0.75 is 1.0.
+        {0.75f, 0b0010}, // Round to 1.0
         {1.0f, 0b0010},
         {1.25f, 0b0011}, // Round to 1.5
         {1.5f, 0b0011},
         {2.0f, 0b0100},
         {2.9f, 0b0101}, // Round to 3.0
         {3.0f, 0b0101},
-        {4.0f, 0b0110}, // Overflow to Inf
+        {4.0f, 0b0110}, // Round to 4.0
+        {5.1f, 0b0111}, // Round to 6.0
+        {100.0f, 0b0111}, // Clamp to 6.0
         {-1.0f, 0b1010},
-        {-3.0f, 0b1101}
+        {-3.0f, 0b1101},
+        {-100.0f, 0b1111} // Clamp to -6.0
     };
 
     for (const auto& tc : cases) {

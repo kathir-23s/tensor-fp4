@@ -20,7 +20,7 @@
 #endif
 namespace OwnTensor {
 
-// ✅ ALWAYS define custom structs (both CPU and GPU compilation)
+//  ALWAYS define custom structs (both CPU and GPU compilation)
 // These are the ONLY types we use in all code paths
 
 // ==================================================================================
