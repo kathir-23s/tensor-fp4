@@ -24,6 +24,21 @@
 
 namespace detail_fp4 {
 
+// Helper to convert float to fp4 (E2M1)
+// Format: S(1) E(2) M(1)
+// Bias: 1
+// Helper to convert float to fp4 (E2M1)
+// Format: S(1) E(2) M(1)
+// Bias: 1
+// New Mapping (No Inf/NaN):
+// 000: 0
+// 001: 0.5 (Subnormal)
+// 010: 1.0 (Norm, E=1, M=0)
+// 011: 1.5 (Norm, E=1, M=1)
+// 100: 2.0 (Norm, E=2, M=0)
+// 101: 3.0 (Norm, E=2, M=1)
+// 110: 4.0 (Norm, E=3, M=0) - Previously Inf
+// 111: 6.0 (Norm, E=3, M=1) - Previously NaN
 // Helper to convert float to fp4 (E2M1 - Modified)
 // Values: 0, 0.5, 1, 1.5, 2, 3, 4, 6
 // Sign bit + 3 bits magnitude

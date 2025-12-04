@@ -34,13 +34,14 @@ int main() {
     B.set_data(data_b);
 
     // 2. Addition
-    // [1.0+0.5, 2.0+3.0] = [1.5, 5.0->Inf(overflow)]
-    // Note: 2.0+3.0 = 5.0. Max FP4 is 3.0. 5.0 >= 4.0 -> Inf.
+    // [1.0+0.5, 2.0+3.0] = [1.5, 5.0->6.0(saturate)]
+    // Note: 2.0+3.0 = 5.0. Max FP4 is 6.0. 5.0 rounds to 6.0.
     Tensor C_add = A + B;
-    if (check_tensor(C_add, {1.5f, std::numeric_limits<float>::infinity()})) {
+    if (check_tensor(C_add, {1.5f, 6.0f})) {
         std::cout << "Addition: PASS" << std::endl;
     } else {
         std::cout << "Addition: FAIL" << std::endl;
+        C_add.display();
     }
 
     // 3. Subtraction
@@ -50,15 +51,17 @@ int main() {
         std::cout << "Subtraction: PASS" << std::endl;
     } else {
         std::cout << "Subtraction: FAIL" << std::endl;
+        C_sub.display();
     }
 
     // 4. Multiplication
-    // [1.0*0.5, 2.0*3.0] = [0.5, 6.0->Inf]
+    // [1.0*0.5, 2.0*3.0] = [0.5, 6.0->6.0(saturate)]
     Tensor C_mul = A * B;
-    if (check_tensor(C_mul, {0.5f, std::numeric_limits<float>::infinity()})) {
+    if (check_tensor(C_mul, {0.5f, 6.0f})) {
         std::cout << "Multiplication: PASS" << std::endl;
     } else {
         std::cout << "Multiplication: FAIL" << std::endl;
+        C_mul.display();
     }
 
     // 5. Division

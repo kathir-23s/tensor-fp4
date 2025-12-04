@@ -16,14 +16,9 @@ bool check_tensor_val(Tensor& t, std::vector<float> expected) {
     const float* data = t_float.data<float>();
     
     for (size_t i = 0; i < t.numel(); ++i) {
-        if (std::isnan(expected[i])) {
-            if (!std::isnan(data[i])) return false;
-        } else if (std::isinf(expected[i])) {
-            if (!std::isinf(data[i])) return false;
-            if ((expected[i] > 0) != (data[i] > 0)) return false;
-        } else {
-            if (data[i] != expected[i]) return false;
-        }
+        // Simple equality check with tolerance if needed, but for FP4 exact match is usually expected
+        // unless operations introduced rounding errors.
+        if (data[i] != expected[i]) return false;
     }
     return true;
 }
