@@ -41,7 +41,11 @@ void unary_kernel_cpu(const T_In* in, T_Out* out, size_t size, Func op) {
                 }
             } else {
                 // Non-complex types - use static_cast
-                out[i] = static_cast<T_Out>(op(static_cast<T_Out>(in[i])));
+                if constexpr (std::is_same_v<T_Out, float4_e2m1_2x_t> || std::is_same_v<T_Out, float4_e2m1_t>) {
+                    out[i] = static_cast<T_Out>(op(static_cast<T_Out>(static_cast<float>(in[i]))));
+                } else {
+                    out[i] = static_cast<T_Out>(op(static_cast<T_Out>(in[i])));
+                }
             }
         }
     }
@@ -218,7 +222,7 @@ Tensor power_out_cpu_wrap(const Tensor& input_tensor, int exponent) {
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
                     return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
                 } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
-                    return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
+                    return static_cast<OutputType>(static_cast<float>(std::pow(static_cast<float>(val), exponent)));
                 } else {
                     return std::pow(val, exponent);
                 }
@@ -318,7 +322,7 @@ Tensor power_out_cpu_wrap(const Tensor& input_tensor, double exponent) {
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
                     return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
                 } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
-                    return static_cast<OutputType>(std::pow(static_cast<float>(val), exponent));
+                    return static_cast<OutputType>(static_cast<float>(std::pow(static_cast<float>(val), exponent)));
                 } else {
                     return std::pow(val, static_cast<OutputType>(exponent));
                 }
@@ -488,6 +492,8 @@ Tensor reciprocal_out_cpu_wrap(const Tensor& input_tensor) {
                 } else if constexpr (std::is_same_v<OutputType, complex64_t> || std::is_same_v<OutputType, complex128_t>) {
                     return OutputType(1.0f) / val;
                 } else if constexpr (std::is_same_v<OutputType, bfloat16_t> || std::is_same_v<OutputType, float16_t>) {
+                    return static_cast<OutputType>(1.0f / static_cast<float>(val));
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
                     return static_cast<OutputType>(1.0f / static_cast<float>(val));
                 } else {
                     return OutputType(1) / val;
@@ -717,6 +723,11 @@ Tensor sign_out_cpu_wrap(const Tensor& input_tensor) {
                     if (f_val > 0) return static_cast<OutputType>(1);
                     if (f_val < 0) return static_cast<OutputType>(-1);
                     return static_cast<OutputType>(0);
+                } else if constexpr (std::is_same_v<OutputType, float4_e2m1_2x_t> || std::is_same_v<OutputType, float4_e2m1_t>) {
+                    float f_val = static_cast<float>(val);
+                    if (f_val > 0.0f) return static_cast<OutputType>(1.0f);
+                    if (f_val < 0.0f) return static_cast<OutputType>(-1.0f);
+                    return static_cast<OutputType>(0.0f);
                 } else {
                     if (val > static_cast<OutputType>(0)) return static_cast<OutputType>(1);
                     if (val < static_cast<OutputType>(0)) return static_cast<OutputType>(-1);

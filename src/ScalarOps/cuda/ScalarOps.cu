@@ -72,12 +72,20 @@ __device__ inline void stf(T* p, size_t i, V v, int fmt) {
                           : (uint16_t)r;
     } else if constexpr (is_complex_t<V>::value && !is_complex_t<T>::value) {
         // Complex -> Scalar: take real part
-        p[i] = static_cast<T>(v.real());
+        if constexpr (std::is_same_v<T, float4_e2m1_2x_t> || std::is_same_v<T, float4_e2m1_t>) {
+            p[i] = static_cast<T>(static_cast<float>(v.real()));
+        } else {
+            p[i] = static_cast<T>(v.real());
+        }
     } else if constexpr (is_complex_t<T>::value && is_complex_t<V>::value) {
         // Complex -> Complex: component-wise
         p[i] = T(v.real(), v.imag());
     } else {
-        p[i] = static_cast<T>(v);
+        if constexpr (std::is_same_v<T, float4_e2m1_2x_t> || std::is_same_v<T, float4_e2m1_t>) {
+            p[i] = static_cast<T>(static_cast<float>(v));
+        } else {
+            p[i] = static_cast<T>(v);
+        }
     }
 }
 

@@ -4,6 +4,7 @@
 #include "core/Tensor.h"
 #include "ops/TensorOps.h"
 #include "dtype/Types.h"
+#include "dtype/DtypeTraits.h"
 
 using namespace OwnTensor;
 
@@ -16,6 +17,32 @@ bool check_tensor(const Tensor& t, const std::vector<float>& expected) {
         if (std::abs(data[i] - expected[i]) > 1e-5f) return false;
     }
     return true;
+}
+
+// Helper to print tensor metadata
+void print_tensor_metadata(const std::string& name, const Tensor& t) {
+    std::cout << "\n--- " << name << " Metadata ---" << std::endl;
+    std::cout << "Shape: [";
+    for (size_t i = 0; i < t.shape().dims.size(); ++i) {
+        std::cout << t.shape().dims[i];
+        if (i < t.shape().dims.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    
+    std::cout << "Stride: [";
+    for (size_t i = 0; i < t.stride().strides.size(); ++i) {
+        std::cout << t.stride().strides[i];
+        if (i < t.stride().strides.size() - 1) std::cout << ", ";
+    }
+    std::cout << "]" << std::endl;
+    
+    std::cout << "Dtype: " << get_dtype_name(t.dtype()) << std::endl;
+    std::cout << "Device: " << (t.device().is_cpu() ? "CPU" : "CUDA") << std::endl;
+    std::cout << "Numel: " << t.numel() << std::endl;
+    std::cout << "Ndim: " << t.ndim() << std::endl;
+    std::cout << "Requires Grad: " << (t.requires_grad() ? "true" : "false") << std::endl;
+    std::cout << "Data: ";
+    t.display();
 }
 
 int main() {
@@ -33,35 +60,38 @@ int main() {
     A.set_data(data_a);
     B.set_data(data_b);
 
+    // Print inputs once
+    std::cout << "\n========== INPUT TENSORS ==========" << std::endl;
+    print_tensor_metadata("Tensor A", A);
+    print_tensor_metadata("Tensor B", B);
+
     // 2. Addition
     // [1.0+0.5, 2.0+3.0] = [1.5, 5.0->6.0(saturate)]
     // Note: 2.0+3.0 = 5.0. Max FP4 is 6.0. 5.0 rounds to 6.0.
     Tensor C_add = A + B;
+
     if (check_tensor(C_add, {1.5f, 6.0f})) {
-        std::cout << "Addition: PASS" << std::endl;
+        std::cout << "\nAddition: PASS" << std::endl;
     } else {
-        std::cout << "Addition: FAIL" << std::endl;
-        C_add.display();
+        std::cout << "\nAddition: FAIL" << std::endl;
     }
 
     // 3. Subtraction
     // [1.0-0.5, 2.0-3.0] = [0.5, -1.0]
     Tensor C_sub = A - B;
     if (check_tensor(C_sub, {0.5f, -1.0f})) {
-        std::cout << "Subtraction: PASS" << std::endl;
+        std::cout << "\nSubtraction: PASS" << std::endl;
     } else {
-        std::cout << "Subtraction: FAIL" << std::endl;
-        C_sub.display();
+        std::cout << "\nSubtraction: FAIL" << std::endl;
     }
 
     // 4. Multiplication
     // [1.0*0.5, 2.0*3.0] = [0.5, 6.0->6.0(saturate)]
     Tensor C_mul = A * B;
     if (check_tensor(C_mul, {0.5f, 6.0f})) {
-        std::cout << "Multiplication: PASS" << std::endl;
+        std::cout << "\nMultiplication: PASS" << std::endl;
     } else {
-        std::cout << "Multiplication: FAIL" << std::endl;
-        C_mul.display();
+        std::cout << "\nMultiplication: FAIL" << std::endl;
     }
 
     // 5. Division
@@ -70,10 +100,17 @@ int main() {
     // 0.666 is closer to 0.5 (diff 0.166) than 1.0 (diff 0.333). -> 0.5.
     Tensor C_div = A / B;
     if (check_tensor(C_div, {2.0f, 0.5f})) {
-        std::cout << "Division: PASS" << std::endl;
+        std::cout << "\nDivision: PASS" << std::endl;
     } else {
-        std::cout << "Division: FAIL" << std::endl;
+        std::cout << "\nDivision: FAIL" << std::endl;
     }
+
+    // Print all result tensors with metadata
+    std::cout << "\n========== RESULT TENSORS ==========" << std::endl;
+    print_tensor_metadata("C_add (A + B)", C_add);
+    print_tensor_metadata("C_sub (A - B)", C_sub);
+    print_tensor_metadata("C_mul (A * B)", C_mul);
+    print_tensor_metadata("C_div (A / B)", C_div);
 
     return 0;
 }

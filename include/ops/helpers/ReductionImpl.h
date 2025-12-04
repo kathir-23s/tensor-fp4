@@ -86,7 +86,7 @@ inline bool to_bool_value(const T& val) {
         return val;
     } else {
         // For all other types (int, float, etc.), non-zero is true
-        return val != T(0);
+        return val != T(0.0f);
     }
 }
 
@@ -383,6 +383,8 @@ Tensor reduce_kernel(
                     } else {
                         output_data[output_index] = complex128_t(static_cast<double>(accumulator), 0.0);
                     }
+                } else if constexpr (std::is_same_v<OutputCppT, float4_e2m1_2x_t> || std::is_same_v<OutputCppT, float4_e2m1_t>) {
+                    output_data[output_index] = static_cast<OutputCppT>(static_cast<float>(accumulator));
                 } else {
                     output_data[output_index] = static_cast<OutputCppT>(accumulator);
                 }
@@ -697,6 +699,8 @@ Tensor dispatch_mean_kernel(const Tensor& input, const std::vector<int64_t>& nor
                 // Handle complex types specially to avoid constructor ambiguity
                 if constexpr (std::is_same_v<SumT, complex32_t> || std::is_same_v<SumT, complex64_t> || std::is_same_v<SumT, complex128_t>) {
                     val /= SumT(static_cast<double>(valid_counts[i]), 0.0);
+                } else if constexpr (std::is_same_v<SumT, float4_e2m1_2x_t> || std::is_same_v<SumT, float4_e2m1_t>) {
+                    val /= static_cast<SumT>(static_cast<float>(valid_counts[i]));
                 } else {
                     val /= static_cast<SumT>(valid_counts[i]);  // Divide by non-NaN count
                 }
@@ -724,6 +728,8 @@ Tensor dispatch_mean_kernel(const Tensor& input, const std::vector<int64_t>& nor
         SumT divisor;
         if constexpr (std::is_same_v<SumT, complex32_t> || std::is_same_v<SumT, complex64_t> || std::is_same_v<SumT, complex128_t>) {
             divisor = SumT(static_cast<double>(reduced_count), 0.0);
+        } else if constexpr (std::is_same_v<SumT, float4_e2m1_2x_t> || std::is_same_v<SumT, float4_e2m1_t>) {
+            divisor = static_cast<SumT>(static_cast<float>(reduced_count));
         } else {
             divisor = static_cast<SumT>(reduced_count);
         }
@@ -1010,6 +1016,8 @@ Tensor dispatch_variance_kernel(const Tensor& input,
         } else {
             if constexpr (std::is_same_v<AccT, complex32_t> || std::is_same_v<AccT, complex64_t> || std::is_same_v<AccT, complex128_t>) {
                 variance = accumulator / AccT(static_cast<double>(divisor), 0.0);
+            } else if constexpr (std::is_same_v<AccT, float4_e2m1_2x_t> || std::is_same_v<AccT, float4_e2m1_t>) {
+                variance = accumulator / static_cast<AccT>(static_cast<float>(divisor));
             } else {
                 variance = accumulator / static_cast<AccT>(divisor);
             }

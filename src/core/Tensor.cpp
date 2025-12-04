@@ -29,7 +29,7 @@ namespace OwnTensor
         : shape_(shape), dtype_(dtype), device_(device), requires_grad_(requires_grad) {
         
         #ifdef WITH_DEBUG
-        std::cout << "\n=== TENSOR CONSTRUCTOR START ===" << std::endl;
+        
         std::cout << "Tensor constructor: device=" << (device.is_cpu() ? "CPU" : "CUDA") << "\n" << std::endl;
         #endif
 

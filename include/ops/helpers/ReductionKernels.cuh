@@ -646,6 +646,8 @@ __global__ void reduce_mean_kernel(
                         typename std::conditional<std::is_same_v<OutputT, complex64_t>, float, double>::type
                     >::type>(mean_val.imag()));
                 }
+            } else if constexpr (std::is_same_v<OutputT, float4_e2m1_2x_t> || std::is_same_v<OutputT, float4_e2m1_t>) {
+                output_data[output_index] = static_cast<OutputT>(static_cast<float>(mean_val));
             } else {
                 output_data[output_index] = static_cast<OutputT>(mean_val);
             }
