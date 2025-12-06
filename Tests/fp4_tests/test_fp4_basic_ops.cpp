@@ -1,10 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <cmath>
-#include "core/Tensor.h"
-#include "ops/TensorOps.h"
-#include "dtype/Types.h"
-#include "dtype/DtypeTraits.h"
+#include "TensorLib.h"
 
 using namespace OwnTensor;
 
